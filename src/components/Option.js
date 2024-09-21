@@ -1,6 +1,6 @@
-function Options({ question, dispatch, answer }) {
-  // const {  } = useQuiz();  
 
+
+function Options({ question, dispatch, answer }) {
   const hasAnswered = answer !== null;
 
   return (

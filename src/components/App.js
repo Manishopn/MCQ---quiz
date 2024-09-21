@@ -4,69 +4,87 @@ import Header from "./Header";
 import Main from "./Main";
 import { type } from "@testing-library/user-event/dist/type";
 import Loader from "./Loader";
-import Error  from "./Error";
+import Error from "./Error";
 import StartScreen from "./StartScreen";
 import Question from "./Question";
+import NextButton from "./NextButton";
+import Progress from "./Progress";
 
 const initialstate = {
   questions: [],
   status: "loading",
   index: 0,
   answer: null,
+  points: 0,
 }
 function reducer(state, action) {
-  
-  switch(action.type){
+
+  switch (action.type) {
     case "dataReceived":
-      return{
+      return {
         ...state,
-        
+
         questions: action.payload,
         status: "ready"
       }
     case "datfail":
-      return{
+      return {
         ...state,
         status: "error"
-      } 
+      }
     case "start":
-      return{
+      return {
         ...state,
-        status : "active"
+        status: "active"
       }
     case "newAnswer":
-      return{
+      const question = state.questions.at(state.index)
+      return {
         ...state,
-        payload: action.payload,
+        answer: action.payload,
+        points: action.payload === question.correctOption ? state.points + question.points : state.points,
+      }
+    case "nextQuestion":
+      return {
+        ...state, index: state.index + 1, answer: null
       }
 
     default:
-      throw new Error("Action undefined")    
-    
+      throw new Error("Action undefined")
+
   }
 
 }
-export default function App(){
- const[{questions, status, index, answer}, dispatch] = useReducer(reducer, initialstate)
+export default function App() {
+  const [{ questions, status, index, answer, points }, dispatch] = useReducer(reducer, initialstate)
 
-const numQuestions = questions.length;
+  const numQuestions = questions.length;
 
 
-  useEffect(function() {
+  useEffect(function () {
     fetch("http://localhost:8000/questions")
-    .then((res) => res.json())
-    .then((data) => dispatch({type : "dataReceived", payload: data}))
-    .catch((err) => dispatch({type : "datafail" }))
+      .then((res) => res.json())
+      .then((data) => dispatch({ type: "dataReceived", payload: data }))
+      .catch((err) => dispatch({ type: "datafail" }))
   }, [])
-  return(
-    <div className="app">  
+  return (
+    <div className="app">
       {/* <DateCounter/> */}
-      <Header/>
+      <Header />
       <Main>
-       {status=== 'loading' && <Loader/>}
-       {status=== 'error' && <Error/>}
-       {status=== 'ready' && <StartScreen numQuestions={numQuestions} dispatch ={dispatch}/>}
-       {status=== 'active' && <Question question= {questions[index]} dispatch= {dispatch} answer= {answer}/>}
+        {status === 'loading' && <Loader />}
+        {status === 'error' && <Error />}
+        {status === 'ready' && <StartScreen numQuestions={numQuestions} dispatch={dispatch} />}
+        {status === 'active' &&
+          <>
+          <Progress index={index} numQuestions={numQuestions} points={points}/>
+          <Question
+            question={questions[index]}
+            dispatch={dispatch}
+            answer={answer} />
+          <NextButton dispatch={dispatch} answer= {answer}/>
+          </>
+        }
       </Main>
     </div>
   )
